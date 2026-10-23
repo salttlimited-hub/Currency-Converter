@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Currency Converter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap">
+<style>
+:root{--bg:#f3f5fb;--card:#fff;--ink:#14172b;--mute:#6b7190;--line:#e3e6f1;--accent:#4f46e5;--accent-ink:#fff;--soft:#eceefd;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1020;--card:#181b30;--ink:#f1f2fb;--mute:#9296b5;--line:#2a2e4a;--accent:#8b85ff;--accent-ink:#0e1020;--soft:#23274a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1020;--card:#181b30;--ink:#f1f2fb;--mute:#9296b5;--line:#2a2e4a;--accent:#8b85ff;--accent-ink:#0e1020;--soft:#23274a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:480px;margin:0 auto;padding:24px 16px 40px}
+h1{font-size:22px;font-weight:800;margin:4px 0 20px;letter-spacing:-.02em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px}
+.row{display:flex;gap:10px;align-items:center}
+label{font-size:13px;color:var(--mute);font-weight:500;display:block;margin-bottom:6px}
+.amount{width:100%;font:800 40px/1.1 inherit;font-family:inherit;border:0;background:transparent;color:var(--ink);outline:none;padding:4px 0 12px;letter-spacing:-.02em}
+.sel{flex:1;min-width:0}
+select{width:100%;appearance:none;-webkit-appearance:none;font:600 16px inherit;font-family:inherit;color:var(--ink);background:var(--soft);border:2px solid transparent;border-radius:14px;padding:14px 12px;cursor:pointer}
+select:focus-visible,button:focus-visible,.amount:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:12px}
+.swap{flex:none;width:46px;height:46px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);font-size:20px;cursor:pointer;margin-top:20px;transition:transform .25s}
+.swap:active{transform:rotate(180deg)}
+.result{margin-top:20px;padding:18px;border-radius:18px;background:var(--soft)}
+.result .small{font-size:14px;color:var(--mute);margin:0 0 4px}
+.result .big{font-size:32px;font-weight:800;letter-spacing:-.02em;word-break:break-word}
+.result .rate{font-size:13px;color:var(--mute);margin-top:6px}
+h2{font-size:16px;margin:28px 4px 10px;font-weight:700}
+.list{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.item{display:flex;justify-content:space-between;align-items:center;width:100%;padding:14px 16px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font:500 15px inherit;font-family:inherit;text-align:left;cursor:pointer}
+.item:last-child{border-bottom:0}
+.item:active{background:var(--soft)}
+.item span:last-child{font-weight:700}
+.note{font-size:12px;color:var(--mute);margin:18px 4px 0;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+<h1>Currency converter</h1>
+<section class="card">
+  <label for="amt">Amount</label>
+  <input id="amt" class="amount" type="text" inputmode="decimal" value="100" autocomplete="off">
+  <div class="row">
+    <div class="sel"><label for="from">From</label><select id="from"></select></div>
+    <button class="swap" id="swap" aria-label="Swap currencies">⇅</button>
+    <div class="sel"><label for="to">To</label><select id="to"></select></div>
+  </div>
+  <div class="result" aria-live="polite">
+    <p class="small" id="line1"></p>
+    <div class="big" id="out"></div>
+    <div class="rate" id="rate"></div>
+  </div>
+</section>
+<h2>Also convert to</h2>
+<div class="list" id="list"></div>
+<p class="note" id="note">Rates are an approximate snapshot, not live market rates. Use them for quick estimates and check your bank or card provider before paying.</p>
+</main>
+<script>
+const C=[["USD","US dollar","🇺🇸",1],["EUR","Euro","🇪🇺",0.92],["GBP","British pound","🇬🇧",0.78],["JPY","Japanese yen","🇯🇵",150],["CAD","Canadian dollar","🇨🇦",1.37],["AUD","Australian dollar","🇦🇺",1.52],["CHF","Swiss franc","🇨🇭",0.88],["CNY","Chinese yuan","🇨🇳",7.2],["INR","Indian rupee","🇮🇳",84],["MXN","Mexican peso","🇲🇽",18.5],["BRL","Brazilian real","🇧🇷",5.3],["KRW","South Korean won","🇰🇷",1350],["SGD","Singapore dollar","🇸🇬",1.33],["HKD","Hong Kong dollar","🇭🇰",7.8],["NZD","New Zealand dollar","🇳🇿",1.65],["SEK","Swedish krona","🇸🇪",10.5],["NOK","Norwegian krone","🇳🇴",10.7],["AED","UAE dirham","🇦🇪",3.6725],["ZAR","South African rand","🇿🇦",18],["TRY","Turkish lira","🇹🇷",34]];
+const OV={ANG:"CW",XAF:"CM",XOF:"SN",XPF:"PF",XCD:"AG"};
+const flag=k=>String.fromCodePoint(...[...(OV[k]||k.slice(0,2))].map(ch=>127397+ch.charCodeAt(0)));
+C.length=0;
+[["AED","UAE dirham",3.6725],["AFN","Afghan afghani",70],["ALL","Albanian lek",92],["AMD","Armenian dram",390],["ANG","Netherlands Antillean guilder",1.79],["AOA","Angolan kwanza",912],["ARS","Argentine peso",1000],["AUD","Australian dollar",1.52],["AWG","Aruban florin",1.79],["AZN","Azerbaijani manat",1.7],["BAM","Bosnian mark",1.8],["BBD","Barbadian dollar",2],["BDT","Bangladeshi taka",120],["BGN","Bulgarian lev",1.8],["BHD","Bahraini dinar",0.376],["BIF","Burundian franc",2900],["BMD","Bermudian dollar",1],["BND","Brunei dollar",1.33],["BOB","Bolivian boliviano",6.91],["BRL","Brazilian real",5.3],["BSD","Bahamian dollar",1],["BTN","Bhutanese ngultrum",84],["BWP","Botswana pula",13.6],["BYN","Belarusian ruble",3.3],["BZD","Belize dollar",2],["CAD","Canadian dollar",1.37],["CDF","Congolese franc",2850],["CHF","Swiss franc",0.88],["CLP","Chilean peso",950],["CNY","Chinese yuan",7.2],["COP","Colombian peso",4200],["CRC","Costa Rican colón",510],["CUP","Cuban peso",24],["CVE","Cape Verdean escudo",102],["CZK","Czech koruna",23],["DJF","Djiboutian franc",177.7],["DKK","Danish krone",6.9],["DOP","Dominican peso",60],["DZD","Algerian dinar",134],["EGP","Egyptian pound",49],["ETB","Ethiopian birr",120],["EUR","Euro",0.92],["FJD","Fijian dollar",2.25],["GBP","British pound",0.78],["GEL","Georgian lari",2.72],["GHS","Ghanaian cedi",16],["GMD","Gambian dalasi",70],["GNF","Guinean franc",8600],["GTQ","Guatemalan quetzal",7.7],["GYD","Guyanese dollar",209],["HKD","Hong Kong dollar",7.8],["HNL","Honduran lempira",25],["HTG","Haitian gourde",131],["HUF","Hungarian forint",360],["IDR","Indonesian rupiah",15800],["ILS","Israeli shekel",3.7],["INR","Indian rupee",84],["IQD","Iraqi dinar",1310],["IRR","Iranian rial",42000],["ISK","Icelandic króna",138],["JMD","Jamaican dollar",157],["JOD","Jordanian dinar",0.709],["JPY","Japanese yen",150],["KES","Kenyan shilling",129],["KGS","Kyrgyzstani som",85],["KHR","Cambodian riel",4050],["KRW","South Korean won",1350],["KWD","Kuwaiti dinar",0.307],["KYD","Cayman Islands dollar",0.83],["KZT","Kazakhstani tenge",480],["LAK","Lao kip",21900],["LBP","Lebanese pound",89500],["LKR","Sri Lankan rupee",295],["LRD","Liberian dollar",190],["LSL","Lesotho loti",18],["LYD","Libyan dinar",4.8],["MAD","Moroccan dirham",9.8],["MDL","Moldovan leu",17.8],["MGA","Malagasy ariary",4600],["MKD","Macedonian denar",56.5],["MMK","Myanmar kyat",2100],["MNT","Mongolian tögrög",3400],["MOP","Macanese pataca",8.03],["MUR","Mauritian rupee",46],["MVR","Maldivian rufiyaa",15.4],["MWK","Malawian kwacha",1735],["MXN","Mexican peso",18.5],["MYR","Malaysian ringgit",4.4],["MZN","Mozambican metical",64],["NAD","Namibian dollar",18],["NGN","Nigerian naira",1600],["NIO","Nicaraguan córdoba",36.8],["NOK","Norwegian krone",10.7],["NPR","Nepalese rupee",134],["NZD","New Zealand dollar",1.65],["OMR","Omani rial",0.385],["PAB","Panamanian balboa",1],["PEN","Peruvian sol",3.75],["PGK","Papua New Guinean kina",4],["PHP","Philippine peso",57],["PKR","Pakistani rupee",278],["PLN","Polish złoty",4],["PYG","Paraguayan guarani",7800],["QAR","Qatari riyal",3.64],["RON","Romanian leu",4.6],["RSD","Serbian dinar",108],["RUB","Russian ruble",92],["RWF","Rwandan franc",1350],["SAR","Saudi riyal",3.75],["SBD","Solomon Islands dollar",8.4],["SCR","Seychellois rupee",13.5],["SDG","Sudanese pound",600],["SEK","Swedish krona",10.5],["SGD","Singapore dollar",1.33],["SLE","Sierra Leonean leone",22.7],["SOS","Somali shilling",571],["SRD","Surinamese dollar",35],["SYP","Syrian pound",13000],["SZL","Swazi lilangeni",18],["THB","Thai baht",34],["TJS","Tajikistani somoni",10.6],["TMT","Turkmenistani manat",3.5],["TND","Tunisian dinar",3.1],["TOP","Tongan paʻanga",2.35],["TRY","Turkish lira",34],["TTD","Trinidad and Tobago dollar",6.8],["TWD","New Taiwan dollar",32],["TZS","Tanzanian shilling",2700],["UAH","Ukrainian hryvnia",41],["UGX","Ugandan shilling",3700],["USD","US dollar",1],["UYU","Uruguayan peso",41],["UZS","Uzbekistani som",12800],["VES","Venezuelan bolívar",40],["VND","Vietnamese dong",25000],["VUV","Vanuatu vatu",119],["WST","Samoan tālā",2.7],["XAF","Central African CFA franc",603],["XCD","East Caribbean dollar",2.7],["XOF","West African CFA franc",603],["XPF","CFP franc",110],["YER","Yemeni rial",250],["ZAR","South African rand",18],["ZMW","Zambian kwacha",27]].forEach(e=>C.push([e[0],e[1],flag(e[0]),e[2]]));
+const R={};C.forEach(c=>R[c[0]]=c);
+const $=id=>document.getElementById(id);
+const amt=$("amt"),from=$("from"),to=$("to");
+C.forEach(c=>{const o=c[2]+" "+c[0]+" – "+c[1];from.add(new Option(o,c[0]));to.add(new Option(o,c[0]))});
+from.value="USD";to.value="PKR";
+try{const s=JSON.parse(localStorage.getItem("cc")||"null");if(s&&R[s.f]&&R[s.t]){from.value=s.f;to.value=s.t;if(s.a)amt.value=s.a}}catch(e){}
+function conv(v,f,t){return v/R[f][3]*R[t][3]}
+function fmt(n,code){let d=Math.abs(n)>=1000||["JPY","KRW"].includes(code)?0:2;if(n!==0&&Math.abs(n)<0.01)d=6;
+try{return new Intl.NumberFormat(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}).format(n)}catch(e){return n.toFixed(d)}}
+function val(){const v=parseFloat(amt.value.replace(/,/g,""));return isNaN(v)?0:v}
+function render(){
+  const v=val(),f=from.value,t=to.value,r=conv(1,f,t);
+  $("line1").textContent=fmt(v,f)+" "+R[f][1]+" =";
+  $("out").textContent=fmt(conv(v,f,t),t)+" "+t;
+  $("rate").textContent="1 "+f+" = "+(r<0.01?r.toFixed(6):r.toFixed(4))+" "+t;
+  const l=$("list");l.innerHTML="";
+  ["USD","EUR","GBP","PKR","INR","CNY","AED","SAR"].filter(c=>c!==f).slice(0,6).forEach(c=>{
+    const b=document.createElement("button");b.className="item";
+    const a=document.createElement("span");a.textContent=R[c][2]+" "+R[c][1];
+    const z=document.createElement("span");z.textContent=fmt(conv(v,f,c),c)+" "+c;
+    b.append(a,z);b.onclick=()=>{to.value=c;render()};l.append(b)});
+  try{localStorage.setItem("cc",JSON.stringify({f,t,a:amt.value}))}catch(e){}
+}
+amt.addEventListener("input",()=>{amt.value=amt.value.replace(/[^0-9.,]/g,"");render()});
+from.onchange=to.onchange=render;
+$("swap").onclick=()=>{const x=from.value;from.value=to.value;to.value=x;render()};
+function apply(r){C.forEach(c=>{if(typeof r[c[0]]==="number")c[3]=r[c[0]]});render()}
+function note(t){$("note").textContent=t}
+async function live(){
+  try{const c=JSON.parse(localStorage.getItem("ccr")||"null");if(c&&c.r){apply(c.r);note("Saved rates from "+new Date(c.t).toLocaleDateString()+". Connect to the internet to refresh.")}}catch(e){}
+  try{const x=await fetch("https://open.er-api.com/v6/latest/USD");const j=await x.json();
+    if(j&&j.rates){apply(j.rates);try{localStorage.setItem("ccr",JSON.stringify({r:j.rates,t:Date.now()}))}catch(e){}
+    note("Live rates, updated "+new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+". Check your bank or card provider before paying.")}}catch(e){}
+}
+render();
+live();
+</script>
+</body>
+</html>
